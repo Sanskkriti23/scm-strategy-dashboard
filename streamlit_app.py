@@ -1,6 +1,6 @@
 
 """
-Streamlit version of the SCM Strategy dashboard (now with improved data analysis and actionable insights for product strategy).
+Streamlit version of the SCM Strategy dashboard (now more actionable with insights based on market gaps, feature differentiation, and revenue projections).
 
 Local run:
   pip install -r requirements.txt
