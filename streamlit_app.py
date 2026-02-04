@@ -15,7 +15,7 @@ from docx import Document
 import streamlit as st
 import plotly.express as px
 
-DOCX_PATH = Path(__file__).with_name("SCM_strategy_reformatted_validation_v2_GTM.docx")
+DOCX_PATH = Path(__file__).with_name("refer.docx")
 
 # ---------- Parsing helpers ----------
 @st.cache_data(show_spinner=False)
