@@ -1,6 +1,6 @@
 
 """
-Streamlit version of the SCM Strategy dashboard (shareable once deployed).
+Streamlit version of the SCM Strategy dashboard (now more insightful for feature prioritization, market fit, and feasibility analysis).
 
 Local run:
   pip install -r requirements.txt
@@ -17,7 +17,7 @@ import plotly.express as px
 
 DOCX_PATH = Path(__file__).with_name("SCM_strategy_reformatted_validation_v2_GTM.docx")
 
-
+# ---------- Parsing helpers ----------
 @st.cache_data(show_spinner=False)
 def tables_from_docx(path: Path) -> list[pd.DataFrame]:
     doc = Document(str(path))
@@ -92,13 +92,14 @@ df_comp_vis["AI Strength (proxy)"] = df_comp_vis.get("AI Strength", pd.Series(["
 df_ai_vis = df_ai.copy()
 df_ai_vis["SME Differentiation (proxy)"] = df_ai_vis.get("SME Differentiation", pd.Series([""]*len(df_ai_vis))).apply(qual_to_score)
 
-
+# ---------- UI ----------
 st.set_page_config(page_title="SCM Strategy Dashboard", layout="wide")
 st.title("Supply Chain ERP Strategy – Interactive Dashboard")
 st.caption(f"Data source: {DOCX_PATH.name}")
 
 tabs = st.tabs(["Competitors", "Market Gaps → Features", "AI Feature Map", "Bangalore GTM", "Revenue Model", "Strategy Insights"])
 
+# --- Competitors ---
 with tabs[0]:
     c1, c2 = st.columns([1, 2])
     segments = ["All"] + sorted(df_comp.get("Primary Segment", pd.Series(dtype=str)).dropna().unique().tolist())
@@ -126,6 +127,21 @@ with tabs[0]:
         fig = px.scatter(dff, x="Complexity/Cost (proxy)", y="AI Strength (proxy)", hover_name="Vendor")
         st.plotly_chart(fig, use_container_width=True)
 
+    # Feature Prioritization Bubble Chart (Handling Non-Numeric)
+    st.subheader("Feature Prioritization vs Feasibility & Market Demand")
+    dff['Strategic Opportunity'] = pd.to_numeric(dff.get('Strategic Opportunity', pd.Series([0] * len(dff))), errors='coerce').fillna(0)
+    fig = px.scatter(
+        dff,
+        x="Complexity/Cost (proxy)",
+        y="AI Strength (proxy)",
+        size="Strategic Opportunity",  # bubble size represents impact
+        color="Coverage Depth",  # use color to highlight strategic opportunities
+        hover_name="Vendor",
+        title="Features by Feasibility, Market Demand & Impact",
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+# --- Market gaps ---
 with tabs[1]:
     st.subheader("Market Gap → Product Feature → Business Value Grid")
     st.dataframe(df_gap, use_container_width=True, height=360)
@@ -141,6 +157,7 @@ with tabs[1]:
     st.subheader("Filtered view")
     st.dataframe(dff, use_container_width=True, height=360)
 
+# --- AI map ---
 with tabs[2]:
     features = sorted(df_ai.get("AI Feature", pd.Series(dtype=str)).dropna().unique().tolist())
     c1, c2 = st.columns([1, 2])
@@ -162,6 +179,7 @@ with tabs[2]:
         fig = px.bar(dff.sort_values("SME Differentiation (proxy)", ascending=False), x="AI Feature", y="SME Differentiation (proxy)")
         st.plotly_chart(fig, use_container_width=True)
 
+# --- GTM ---
 with tabs[3]:
     st.subheader("Beachhead Segments (Bangalore)")
     st.dataframe(df_segments, use_container_width=True, height=280)
@@ -173,6 +191,7 @@ with tabs[3]:
     for b in (pilot_playbook or DEFAULT_PLAYBOOK):
         st.write(f"• {b}")
 
+# --- Revenue ---
 with tabs[4]:
     st.subheader("Revenue Model Mapping")
     st.dataframe(df_revenue, use_container_width=True, height=320)
@@ -202,6 +221,7 @@ with tabs[4]:
         fig = px.bar(tmp, x="Revenue Stream", y="count")
         st.plotly_chart(fig, use_container_width=True)
 
+# --- Insights ---
 with tabs[5]:
     st.subheader("Strategy Validation Insights (Section D)")
     if insights_d:
